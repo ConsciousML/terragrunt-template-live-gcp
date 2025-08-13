@@ -12,14 +12,16 @@ locals {
 
 remote_state {
   backend = "gcs"
-  generate = "backend.tf"
-  if_exists = "overwrite_terragrunt"
+  generate = {
+    path = "backend.tf"
+    if_exists = "overwrite_terragrunt"
+  }
   config = {
 
     project = "${local.gcp_project}"
-    location = "${local.gcp_region}"
+    location = "eu"
 
-    bucket = "tofu-state"
+    bucket = "tofu-state-catalog-example"
     prefix   = "${path_relative_to_include()}/tofu.tfstate"
     gcs_bucket_labels = {
       owner = "terragrunt"
