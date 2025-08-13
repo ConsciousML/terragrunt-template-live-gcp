@@ -25,7 +25,7 @@ remote_state {
     project = "${local.gcp_project}"
     location = "eu"
 
-    bucket = "tofu-state-${local.environment}"
+    bucket = "${local.gcp_project}-tofu-state-${local.environment}"
     prefix   = "${path_relative_to_include()}/tofu.tfstate"
     gcs_bucket_labels = {
       owner = "terragrunt"
@@ -70,7 +70,7 @@ catalog {
 
 # Pass key variables to child configurations
 inputs = merge(
-  local.gcp_project,
-  local.gcp_region,
-  local.environment
+  local.project_vars.locals,
+  local.region_vars.locals,
+  local.environment_vars.locals
 )
