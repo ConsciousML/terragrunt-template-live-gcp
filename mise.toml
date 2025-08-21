@@ -1,5 +1,5 @@
 [tools]
 opentofu = "1.9.1"
-terragrunt = "0.81.7"
+terragrunt = "0.84.1"
 python = "3.13.1"
 go = "1.24"
