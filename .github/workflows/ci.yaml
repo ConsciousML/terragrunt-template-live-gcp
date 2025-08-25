@@ -13,6 +13,7 @@ concurrency:
 permissions:
   pull-requests: write
   contents: read
+  id-token: 'write'
 
 jobs:
   hcl-format-check:
