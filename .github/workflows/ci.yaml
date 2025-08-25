@@ -51,6 +51,18 @@ jobs:
             ${{ secrets.DEPLOY_KEY_TG_STACK }}
             ${{ secrets.DEPLOY_KEY_TG_LIVE }}
 
+      # Use Workflow Identity Federation to authenticate GitHub Actions with Google
+      # Terragrunt needs permissions from GCP to run plan and apply
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # Install the gcloud SDK
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+
       - name: Install aha to convert plan output to html
         run: sudo apt-get install aha
 
@@ -114,6 +126,18 @@ jobs:
         if: steps.check-label.outputs.label_present == 'false'
         run: exit 1
 
+      # Use Workflow Identity Federation to authenticate GitHub Actions with Google
+      # Terragrunt needs permissions from GCP to run plan and apply
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # Install the gcloud SDK
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+
       - name: Install mise
         uses: jdx/mise-action@v2.2.3
 
@@ -123,7 +147,6 @@ jobs:
           ssh-private-key: |
             ${{ secrets.DEPLOY_KEY_TG_STACK }}
             ${{ secrets.DEPLOY_KEY_TG_LIVE }}
-      
 
       - name: Run Terratest
         run: go test -v ./tests/... -timeout 30m
