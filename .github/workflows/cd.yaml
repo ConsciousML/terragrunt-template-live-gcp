@@ -8,7 +8,11 @@ on:
 
 concurrency:
   group: cd-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: 'write'
 
 jobs:
   terragrunt-apply-prod:
@@ -20,13 +24,28 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v2.2.3
 
-      - name: Set up SSH for Terragrunt module pulls
+      - name: Set up Deploy Key Terragrunt module pulls
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY_TG_STACK }}
+          ssh-private-key: |
+            ${{ secrets.DEPLOY_KEY_TG_STACK }}
+            ${{ secrets.DEPLOY_KEY_TG_LIVE }}
+
+      # Use Workflow Identity Federation to authenticate GitHub Actions with Google
+      # Terragrunt needs permissions from GCP to run apply
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # Install the gcloud SDK
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Terragrunt apply on prod
         run: |
           cd live/prod
           terragrunt stack generate
-          terragrunt --non-interactive run --all apply --no-stack-generate
+          terragrunt run --all init --no-stack-generate --backend-bootstrap --non-interactive
+          terragrunt run --all apply --no-stack-generate --non-interactive
