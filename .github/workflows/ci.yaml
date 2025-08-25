@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: ci-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   pull-requests: write
@@ -71,6 +71,7 @@ jobs:
         run: |
           cd live/${{ matrix.env }}
           terragrunt stack generate
+          terragrunt run --all init --no-stack-generate --backend-bootstrap --non-interactive
           terragrunt run --all validate --no-stack-generate
           terragrunt run --all plan --no-stack-generate > ${{ matrix.env }}-plan-output.txt
           cat ${{ matrix.env }}-plan-output.txt | aha --black > prod-plan-output.html
