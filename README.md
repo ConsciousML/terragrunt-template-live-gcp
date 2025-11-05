@@ -23,35 +23,53 @@ This IaC production toolkit follows [Gruntwork's official patterns](https://gith
 - [CD](.github/workflows/cd.yaml) (on push `main`): Automatically deploys on `prod`
 - [Bootstrap pipeline](live/bootstrap/enable_tg_github_actions/) to automatically authenticate GitHub Actions with GCP.
 
+You're new to Terragrunt best practices? Read [Gruntwork's official production patterns](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example) to get the foundations required to use this extended repository.
+
 ## Getting Started
+**Protip**: Follow the getting started of the [catalog repository](https://github.com/ConsciousML/terragrunt-template-catalog-gcp) first, as you'll need to configure it before using this live repository. 
 
 ### Prerequisites
 - GCP account with billing enabled
 - GitHub account
-- GCP IAM permissions to create service accounts and workload identity pools
+- GCP IAM permissions to create service accounts, network, compute, and workload identity pools
 
-### Fork the Repository
+### Fork the Repositories (catalog and live)
+First, fork the catalog repository by following its [Fork the Repository section](https://github.com/ConsciousML/terragrunt-template-catalog-gcp/#fork-the-repository).
 
+Next, you'll need to also fork this repository (live) and make a few changes:
 1. Click on `Use this template` to create your own repository
-2. Clone your new repository locally
-3. Replace all occurrences of `ConsciousML` with your GitHub organization/username:
-   - In `live/root.hcl` under the `catalog` block
-   - In stack source URLs (if you're using your own catalog fork)
+2. Use your IDE of choice to replace every occurrence of `github.com/ConsciousML/terragrunt-template-catalog-gcp` by your GitHub repo URL following the same format
+3. For each directory in `live/` (i.e `bootstrap/`, `dev/`, etc.), change `region.hcl` and `project.hcl` to match your GCP settings
+
+**Warning**: If you skip step 2, the TG source links will still point to the original repository (on `github.com/ConsciousML/`).
 
 ### Installation
 
 **Option 1: Use mise (recommended)**
 
-First install mise by following their [getting started guide](https://mise.jdx.dev/getting-started.html), then:
+First, `cd` at the root of this repository. 
+
+Next, install mise:
+```bash
+curl https://mise.run | sh
+```
+
+Then, install all the tools in the `mise.toml` file:
 ```bash
 mise install
 ```
 
-This installs the required versions of:
-- OpenTofu 1.9.1
-- Terragrunt 0.84.1
-- Go 1.24
-- Python 3.13.1
+Finally, run the following to automatically activate mise when starting a shell:
+- For zsh: 
+```bash
+echo 'eval "$(~/.local/bin/mise activate zsh)"' >> ~/.zshrc && source ~/.zshrc
+```
+- For bash:
+```bash
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc && source ~/.bashrc
+```
+
+For more information on how to use mise, read their [getting started guide](https://mise.jdx.dev/getting-started.html).
 
 **Option 2: Install Tools Manually**
 - [Terragrunt](https://terragrunt.gruntwork.io/docs/getting-started/install/)
@@ -101,16 +119,15 @@ locals {
 
 Repeat for `live/staging/` and `live/prod/` directories.
 
+### Deploy the Dev infrastructure manually
+```bash
+cd live/dev
+
+```
+
 ### Bootstrap GitHub Actions Authentication
 
 **Important**: Run this **once** after creating your repository to set up secure authentication between GitHub Actions and GCP.
-
-This bootstrap process creates:
-- Workload Identity Federation pool and provider
-- Service account for GitHub Actions (`gh-actions-live`)
-- Required IAM roles for Terragrunt operations
-- GitHub secrets for CI/CD authentication
-- Deploy keys for accessing private catalog repositories
 
 Follow the detailed instructions in the [bootstrap README](https://github.com/ConsciousML/terragrunt-template-catalog-gcp/tree/main/bootstrap/enable_tg_github_actions).
 
