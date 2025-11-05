@@ -120,9 +120,19 @@ locals {
 Repeat for `live/staging/` and `live/prod/` directories.
 
 ### Deploy the Dev infrastructure manually
+Deploy the `dev` stack that activates GCP APIs, sets up a VPC, and spawns a Compute Engine:
 ```bash
 cd live/dev
+terragrunt stack generate
+terragrunt stack run apply --backend-bootstrap --non-interactive
+```
 
+- Go into the GCP console and check that your resources have been created
+- Then cleanup by destroying the infrastructure (cwd in `live/dev/`):
+
+```bash
+terragrunt stack generate
+terragrunt stack run destroy --non-interactive
 ```
 
 ### Bootstrap GitHub Actions Authentication
