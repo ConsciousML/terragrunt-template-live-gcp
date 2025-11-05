@@ -135,41 +135,11 @@ terragrunt stack generate
 terragrunt stack run destroy --non-interactive
 ```
 
-**Caution**: This is only for development. To deploy on `prod` follow the CI/CD section
-
 ## Deployment Workflow
 
-### Updating Catalog Versions
-
-Each stack references a specific version of the catalog. To update:
-
-1. Edit the `terragrunt.stack.hcl` file in your environment:
-```hcl
-locals {
-  version = "v0.0.3"  # Update to new version
-}
-
-stack "vpc_gce" {
-  source = "github.com/ConsciousML/terragrunt-template-catalog-gcp//stacks/vpc_gce?ref=${local.version}"
-  # ... rest of configuration
-}
-```
-
-2. Test the update:
-```bash
-cd live/dev
-terragrunt stack generate
-terragrunt run --all plan
-```
-
-3. Apply if the plan looks correct:
-```bash
-terragrunt run --all apply --non-interactive
-```
+Follow the [Using the CI/CD section](docs/ci_cd.md#using-the-cicd) to deploy your infrastructure on prod.
 
 ## CI/CD Pipelines
-
-This repository includes production-ready GitHub Actions workflows that automate validation, testing, and deployment.
 
 ### CI (Pull Requests)
 - Validates HCL formatting
@@ -199,10 +169,6 @@ require.Equal(t, 200, resp.StatusCode)
 ```
 
 Tests run automatically in CI when the `run-terratest` label is added to your PR. See the [CI/CD guide](docs/ci_cd.md) for details.
-
-## Deployment Workflow
-
-Follow the [Using the CI/CD section](docs/ci_cd.md#using-the-cicd) to deploy your infrastructure on prod.
 
 ## Related Documentation
 
