@@ -1,354 +1,453 @@
-[![Maintained by Gruntwork.io](https://img.shields.io/badge/maintained%20by-gruntwork.io-%235849a6.svg)](https://gruntwork.io/?ref=repo_terragrunt-infra-live-example)
+# Terragrunt Template Live GCP
 
-# Example infrastructure-live for Terragrunt (with Stacks)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![GitHub Release](https://img.shields.io/github/release/ConsciousML/terragrunt-template-live-gcp.svg?style=flat)]()
+[![CI](https://github.com/ConsciousML/terragrunt-template-live-gcp/actions/workflows/ci.yaml/badge.svg)](https://github.com/ConsciousML/terragrunt-template-live-gcp/actions/workflows/ci.yaml)
+[![PR's Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 
-This repository, along with the [terragrunt-infrastructure-catalog-example repository](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example),
-offers a best practice system for organizing your Infrastructure as Code (IaC) so that you can maintain your IaC at any
-scale with confidence using an `infrastructure-live` repository.
+A prod-ready Terragrunt Template for deploying multi-environment IaC on Google Cloud Platform (GCP).
 
-If you have not already done so, you are encouraged to read the [Terragrunt Getting Started Guide](https://terragrunt.gruntwork.io/docs/getting-started/quick-start/) to get familiar with the terminology and concepts used in this repository before proceeding.
+## Catalog vs Live Infrastructure
 
-## What is an `infrastructure-live` repository?
+This is a **live repository** for deploying infrastructure across multiple environments.
 
-An `infrastructure-live` repository is a Gruntwork best practice for managing your "live" infrastructure. That is, the
-infrastructure that is actually provisioned, as opposed to infrastructure patterns that *can* be provisioned.
+This IaC production toolkit follows [Gruntwork's official patterns](https://github.com/gruntwork-io/terragrunt-infrastructure-live-example) by using two template repositories:
+- **Catalog repository**: Defines **what** can be deployed (reusable components: [modules, units, and stacks](https://github.com/ConsciousML/terragrunt-template-catalog-gcp))
+- **This repository** (live): Defines **where** and **how** catalog components are deployed in `dev`, `staging`, and `prod` environments with CI/CD
 
-## Key Features & Benefits
 
-This repository provides a practical blueprint for managing infrastructure with Terragrunt, demonstrating:
+## What's Inside
 
-* **Modern Terragrunt Workflow:** Leverages Terragrunt Stacks for clear dependency management and streamlined multi-component deployments.
-* **Scalable `infrastructure-live` Structure:** Organizes infrastructure logically by account and region, providing a proven foundation adaptable to growing complexity.
-* **Best-Practice Separation:** Clearly separates environment-specific "live" configurations (this repo) from reusable infrastructure patterns (via an `infrastructure-catalog`).
-* **DRY Configuration:** Reduces code duplication using hierarchical configuration files (`root.hcl`, `account.hcl`, `region.hcl`).
-* **Concrete End-to-End Example:** Deploys a sample stateful web application (ASG, ALB, MySQL) across distinct production and non-production environments.
-* **Reproducible Tooling:** Includes `mise` configuration for easy installation of pinned versions of Terragrunt and OpenTofu/Terraform.
+- Multi-environment IaC support
+- [CI](.github/workflows/ci.yaml) (on PR): Runs `terragrunt plan` on each environment, uploads output plan to PR, deploys on the staging environment, runs some tests, and destroys.
+- [CD](.github/workflows/cd.yaml) (on push `main`): Automatically deploys on `prod`
+- [Bootstrap pipeline](live/bootstrap/enable_tg_github_actions/) to automatically authenticate GitHub Actions with GCP.
 
 ## Getting Started
 
-> [!TIP]
-> If you have an existing repository that was started using the [terragrunt-infrastructure-live-example](https://github.com/gruntwork-io/terragrunt-infrastructure-live-example) repository as a starting point, follow the [migration guide](/docs/migration-guide.md) for help in adjusting your existing configurations to take advantage of the patterns outlined in this repository.
+### Prerequisites
+- GCP account with billing enabled
+- GitHub account
+- GCP IAM permissions to create service accounts and workload identity pools
 
-To use this repository, you'll want to fork this repository into your own Git organization.
+### Fork the Repository
 
-The steps for doing this are the following:
+1. Click on `Use this template` to create your own repository
+2. Clone your new repository locally
+3. Replace all occurrences of `ConsciousML` with your GitHub organization/username:
+   - In `live/root.hcl` under the `catalog` block
+   - In stack source URLs (if you're using your own catalog fork)
 
-1. Create a new Git repository in your organization (e.g. [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), [GitLab](https://docs.gitlab.com/user/project/repository/)).
+### Installation
 
-2. Create a bare clone of this repository somewhere on your local machine.
+**Option 1: Use mise (recommended)**
 
-   ```bash
-   git clone --bare https://github.com/gruntwork-io/terragrunt-infrastructure-live-stacks-example.git
-   ```
-
-3. Push the bare clone to your new Git repository.
-
-   ```bash
-   cd terragrunt-infrastructure-live-stacks-example.git
-   git push --mirror <YOUR_GIT_REPO_URL> # e.g. git push --mirror git@github.com:acme/terragrunt-infrastructure-live-stacks-example.git
-   ```
-
-4. Remove the local clone of the repository.
-
-   ```bash
-   cd ..
-   rm -rf terragrunt-infrastructure-live-stacks-example.git
-   ```
-
-5. (Optional) Delete the contents of this usage documentation from your fork of this repository.
-
-## Prerequisites
-
-To use this repository, you'll want to make sure you have the following installed:
-
-- [Terragrunt](https://terragrunt.gruntwork.io/docs/getting-started/install/)
-- [OpenTofu](https://opentofu.org/docs/intro/install/) (or [Terraform](https://developer.hashicorp.com/terraform/install))
-
-To simplify the process of installing these tools, you can install [mise](https://mise.jdx.dev/), then run the following to concurrently install all the tools you need, pinned to the versions they were tested with (as tracked in the [mise.toml](./mise.toml) file):
-
+First install mise by following their [getting started guide](https://mise.jdx.dev/getting-started.html), then:
 ```bash
 mise install
 ```
 
-## Repository Contents
+This installs the required versions of:
+- OpenTofu 1.9.1
+- Terragrunt 0.84.1
+- Go 1.24
+- Python 3.13.1
 
-> [!NOTE]
-> This code is solely for demonstration purposes. This is not production-ready code, so use at your own risk. If you are interested in battle-tested, production-ready Terragrunt and OpenTofu/Terraform code, continuously updated and maintained by a team of subject matter experts, consider purchasing a subscription to the [Gruntwork IaC Library](https://www.gruntwork.io/platform/iac-library).
+**Option 2: Install Tools Manually**
+- [Terragrunt](https://terragrunt.gruntwork.io/docs/getting-started/install/)
+- [OpenTofu](https://opentofu.org/docs/intro/install/) (or [Terraform](https://developer.hashicorp.com/terraform/install))
+- [Go](https://go.dev/doc/install)
+- [Python 3.13.1](https://www.python.org/downloads/)
+- [GitHub CLI](https://github.com/cli/cli#installation)
+- [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 
-This repository contains the following:
+See [mise.toml](./mise.toml) for specific versions.
 
-- `root.hcl`: The root Terragrunt configuration inherited by all other Terragrunt units in this repository.
+### Configure GCP Settings
 
-- `non-prod`/`prod` directories: Each of these directories are a representation of an AWS account, and all the infrastructure that's provisioned for an account can be found in the respective directory.
-
-- `account.hcl` files: In each account directory, there is an `account.hcl` file that defines the common configurations for that account.
-
-- `region.hcl` files: In each region directory (e.g. `us-east-1`), there is a `region.hcl` file that defines the common configurations for that region.
-
-- `root.hcl`: The root Terragrunt configuration inherited by all other Terragrunt units in this repository. This file contains code that reads the `account.hcl` and `region.hcl` files in every unit, and leverages them for provider and backend configurations.
-
-- `terragrunt.stack.hcl` files: These files define a stack of Terragrunt units.
-
-  Both the `terragrunt.stack.hcl` files in this repository provision the units required for a stateful ASG service, including:
-
-  - EC2 Auto Scaling Group (ASG)
-  - Application Load Balancer (ALB)
-  - Security Groups (SGs)
-  - MySQL Database (DB)
-
-  The configurations for these resources aren't defined in this repository, but are instead defined in the [terragrunt-infrastructure-catalog-example](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example) repository.
-
-  This is a recommended, Gruntwork best practice, as it allows infrastructure teams to iterate on infrastructure patterns as versioned, immutable artifacts, and then reference pinned versions of these patterns in their "live" infrastructure-live repositories.
-
-## Best practices for an `infrastructure-live` repository
-
-The following conventions are some best practices for an `infrastructure-live` repository, as defined by Gruntwork:
-
-- Primarily use [Terragrunt](https://terragrunt.gruntwork.io/) configurations to define your IaC.
-- Avoid using OpenTofu/Terraform directly in `infrastructure-live` repositories. Instead, prefer to author them in an `infrastructure-catalog` repository (see [terragrunt-infrastructure-catalog-example](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example)).
-- Follow [Trunk-Based Development](https://trunkbaseddevelopment.com/). The source of truth for your infrastructure is the code in the `main` branch (or whatever you configure the default branch to be).
-- Avoid using [OpenTofu/Terraform Workspaces](https://opentofu.org/docs/language/state/workspaces/). Instead, use [Terragrunt units](https://terragrunt.gruntwork.io/docs/getting-started/terminology/#unit) to isolate state.
-- Use [Stacks](https://terragrunt.gruntwork.io/docs/getting-started/terminology/#stack) to organize your infrastructure into logical collections of units.
-
-## How to provision the infrastructure in this repository
-
-### Setup
-
-Before you start provisioning the infrastructure in this repository, you'll want to do the following:
-
-1. Update the `bucket` attribute of the `remote_state` block in the `root.hcl` file to a unique name.
-
-   ```hcl
-   remote_state {
-     backend = "s3"
-     config = {
-       encrypt        = true
-       # vvvvv Replace this vvvvvv
-       bucket         = "${get_env("TG_BUCKET_PREFIX", "")}terragrunt-example-tf-state-${local.account_name}-${local.aws_region}"
-       # ^^^^^ Replace this ^^^^^^
-       key            = "${path_relative_to_include()}/tf.tfstate"
-       region         = local.aws_region
-       dynamodb_table = "tf-locks"
-     }
-     generate = {
-       path      = "backend.tf"
-       if_exists = "overwrite_terragrunt"
-     }
-   }
-   ```
-
-   Alternatively, you can set the `TG_BUCKET_PREFIX` environment variable to set a custom prefix. S3 bucket names must be globally unique across all AWS customers, so you'll have to make sure that the value you choose doesn't conflict with any existing bucket names.
-
-2. Update the `account_name` and `aws_account_id` parameters in [`non-prod/account.hcl`](/non-prod/account.hcl) and [`prod/account.hcl`](/prod/account.hcl) with the names and IDs of accounts you want to use for non production and production workloads, respectively.
-
-   > [!TIP]
-   > If you want everything deployed in a single AWS account, you can just use different values for the `account_name` parameter, and keep the `aws_account_id` parameter the same.
-
-3. Configure your local AWS credentials using one of the supported [authentication mechanisms](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
-
-### Provisioning a single stack
-
-1. Navigate to the directory of the stack you want to provision.
-   e.g.
-
-   ```bash
-   cd non-prod/us-east-1/stateful-ec2-asg-service
-   ```
-
-2. Run the following to generate the relevant units for the stack, and run a plan against them.
-
-   ```bash
-   terragrunt stack run plan
-   ```
-
-3. If the plan looks good, run the following to apply the changes.
-
-   ```bash
-   terragrunt stack run apply
-   ```
-
-### Provisioning all stacks
-
-If you want to provision all the stacks in this repository, you can do the following:
-
-1. Generate all units for all stacks from the root of the repository.
-
-   ```bash
-   terragrunt stack generate
-   ```
-
-2. Plan all units.
-
-   ```bash
-   terragrunt run --all plan
-   ```
-
-3. Apply all units.
-
-   ```bash
-   terragrunt run --all apply
-   ```
-
-## Interacting with the provisioned infrastructure
-
-If you'd like to interact with the infrastructure that was just provisioned, you can do the following:
-
-1. Get the output values for the stack that you just provisioned.
-
-   ```bash
-   $ cd non-prod/us-east-1/stateful-ec2-asg-service
-   $ terragrunt stack output
-   service = {
-     alb_dns_name          = "stateful-asg-service-XXXXXXXXXX.us-east-1.elb.amazonaws.com"
-     alb_security_group_id = "sg-XXXXXXXXXXXX"
-     asg_name              = "terraform-XXXXXXXXXXXXXXXXXXXXXXXX"
-     asg_security_group_id = "sg-XXXXXXXXXXXX"
-     url                   = "http://stateful-asg-service-XXXXXXXXXX.us-east-1.elb.amazonaws.com:80"
-   }
-   sg_to_db_sg_rule = null
-   asg_sg = {
-     id = "sg-XXXXXXXXXXXX"
-   }
-   db = {
-     arn                  = "arn:aws:rds:us-east-1:XXXXXXXXXXXX:db:terraform-XXXXXXXXXXXXXXXXXXXXXXXX"
-     db_name              = "statefulasgservicedb"
-     db_security_group_id = "sg-XXXXXXXXXXXX"
-     endpoint             = "terraform-XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXX.us-east-1.rds.amazonaws.com:3306"
-   }
-   ```
-
-   Note that all the units in the stack display their outputs here. Outputs are organized by stack, then unit, then output name.
-
-2. Use the output values to interact with the infrastructure.
-
-   ```bash
-   $ URL="$(terragrunt stack output --raw service.url)"
-   $ curl $URL
-   OK
-   $ curl $URL/movies
-   [{"id":1,"title":"The Matrix","releaseYear":1999},{"id":2,"title":"The Matrix Reloaded","releaseYear":2003},{"id":3,"title":"The Matrix Revolutions","releaseYear":2003}]
-   ```
-
-   Outputs can be indexed by output key. In this case, the `service` unit has an output key of `url`, so we can access it directly with `service.url`. When outputs are nested into stacks, you can access them by chaining the stack name, unit name, and output key.
-
-## How is the code in this repository organized?
-
-The IaC code in this repository is organized into a hierarchy of Terragrunt stacks, representing the blast radius of the infrastructure being managed in the context of AWS infrastructure management.
-
-The hierarchy is as follows:
-
-```tree
-account
- └ region
-    └ resources
+1. Authenticate with GCP:
+```bash
+gcloud auth login
+gcloud auth application-default login
 ```
 
-Where:
-
-- `account` is the AWS account being managed (e.g. `non-prod`, `prod`, `mgmt`).
-- `region` is the AWS region being managed (e.g. `us-east-1`).
-- `resources` are the resources being managed (e.g. `stateful-ec2-asg-service`).
-
-This structure is geared towards exclusive management of infrastructure in AWS, but can be adapted to other cloud providers, etc. by adjusting the hierarchy according to the patterns of the platform.
-
-The top-level `account` and `region` directories are there to give clear context for users that are familiar with AWS infrastructure management. Authentication and configuration of the OpenTofu AWS provider is specific to the AWS account and region, so it's also useful to have these directories to provide a straight-forward way to configure the provider.
-
-Many teams like to organize their environments into individual AWS accounts, and this structure makes it easy to do that. If you are part of a team that manages multiple environments in a single AWS account, you can simply add a new level of hierarchy under the `region` directory, like this:
-
-```tree
-account
- └ region
-    └ environment
-       └ resources
+2. List your GCP projects:
+```bash
+gcloud projects list
 ```
 
-There's also an established convention to leverage a special `_global` directory to manage resources that are available across all regions, environments, etc. Structuring your IaC like that would look like this:
-
-```tree
-account
- ├ _global
- │  └ resources
- └ region
-    ├ _global
-    │  └ resources
-    └ environment
-       └ resources
+3. Set your default project:
+```bash
+gcloud config set project YOUR_PROJECT_ID
 ```
 
-Where:
+4. Update environment configuration files with your GCP project ID and region:
 
-- **Account-level `_global`**: Contains resources that are available across all regions in the account, such as IAM users, Route 53 hosted zones, and CloudTrail.
-- **Region-level `_global`**: Contains resources that are available across all environments in a region, such as Route 53 A records, SNS topics, and ECR repositories.
+Edit `project.hcl` in each environment directory:
+```hcl
+# live/dev/project.hcl
+locals {
+  project = "your-dev-project-id"
+}
+```
 
-The `resources` directory can be arbitrarily deep, and can be used to organize resources under management in a way that makes sense for the team managing the infrastructure. In this repository it's fairly shallow for the sake of simplicity, with the units constituting the stack in the `terragrunt.stack.hcl` files defined in the [terragrunt-infrastructure-catalog-example](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example) repository.
+Edit `region.hcl` in each environment directory:
+```hcl
+# live/dev/region.hcl
+locals {
+  region = "us-central1"  # Or your preferred region
+}
+```
 
-## Where to store configuration
+Repeat for `live/staging/` and `live/prod/` directories.
 
-### `root.hcl`
+### Bootstrap GitHub Actions Authentication
 
-The contents of the `root.hcl` file is configuration that is common to all units the repository. It's idiomatic Terragrunt code to always include this root file in every unit. There's very frequently some boilerplate configuration like defining the OpenTofu provider, setting state backend configurations, etc. that have to be repeated in every unit, so it's nice to have it defined once in the root file, and included in every unit.
+**Important**: Run this **once** after creating your repository to set up secure authentication between GitHub Actions and GCP.
 
-As you can see in the `inputs` attribute, these values are also exposed to the units, so they're accessible to the units as well, should they need them:
+This bootstrap process creates:
+- Workload Identity Federation pool and provider
+- Service account for GitHub Actions (`gh-actions-live`)
+- Required IAM roles for Terragrunt operations
+- GitHub secrets for CI/CD authentication
+- Deploy keys for accessing private catalog repositories
+
+Follow the detailed instructions in the [bootstrap README](https://github.com/ConsciousML/terragrunt-template-catalog-gcp/tree/main/bootstrap/enable_tg_github_actions).
+
+**Quick summary:**
+```bash
+cd bootstrap/enable_tg_github_actions/
+# Update terragrunt.stack.hcl with your settings
+gh auth login --scopes "repo,admin:repo_hook"
+export TF_VAR_github_token="$(gh auth token)"
+terragrunt stack generate
+terragrunt stack run apply --backend-bootstrap --non-interactive
+```
+
+After bootstrap completes, your GitHub Actions workflows will be able to authenticate to GCP without storing any credentials.
+
+## Deployment Workflow
+
+### Local Deployment (Development/Testing)
+
+Deploy to the dev environment locally:
+
+```bash
+cd live/dev
+terragrunt stack generate
+terragrunt run --all init --backend-bootstrap --non-interactive
+terragrunt run --all apply --non-interactive
+```
+
+To destroy the infrastructure:
+```bash
+cd live/dev
+terragrunt stack generate
+terragrunt run --all destroy --non-interactive
+```
+
+### Viewing the Terraform Plan
+
+Before applying changes, you can preview what will be created/modified:
+
+```bash
+cd live/dev
+terragrunt stack generate
+terragrunt run --all plan
+```
+
+### Deploying to Different Environments
+
+The same commands work for any environment, just change the directory:
+
+```bash
+# Staging
+cd live/staging
+terragrunt stack generate
+terragrunt run --all apply --non-interactive
+
+# Production (be careful!)
+cd live/prod
+terragrunt stack generate
+terragrunt run --all apply --non-interactive
+```
+
+### Updating Catalog Versions
+
+Each stack references a specific version of the catalog. To update:
+
+1. Edit the `terragrunt.stack.hcl` file in your environment:
+```hcl
+locals {
+  version = "v0.0.3"  # Update to new version
+}
+
+stack "vpc_gce" {
+  source = "github.com/ConsciousML/terragrunt-template-catalog-gcp//stacks/vpc_gce?ref=${local.version}"
+  # ... rest of configuration
+}
+```
+
+2. Test the update:
+```bash
+cd live/dev
+terragrunt stack generate
+terragrunt run --all plan
+```
+
+3. Apply if the plan looks correct:
+```bash
+terragrunt run --all apply --non-interactive
+```
+
+## CI/CD Pipelines
+
+This repository includes production-ready GitHub Actions workflows that automate validation, testing, and deployment.
+
+### Continuous Integration (CI)
+
+**Trigger**: Pull requests to `main` branch
+
+**What it does:**
+1. **HCL Format Check**: Validates Terragrunt/HCL file formatting
+2. **Validate & Plan**: Runs on all environments (dev, staging, prod) in parallel
+   - Generates stack configurations
+   - Initializes Terragrunt with backend bootstrapping
+   - Validates Terraform configuration
+   - Creates Terraform plans
+3. **Terratest**: Runs infrastructure tests (requires `run-terratest` label)
+4. **Plan Review**: Comments on PR with production plan artifact for review
+
+**Authentication**: Uses Workload Identity Federation (WIF) configured during bootstrap
+
+**How to use:**
+1. Create a feature branch
+2. Make your infrastructure changes
+3. Open a pull request
+4. Review the automated validation and plans
+5. Add `run-terratest` label to trigger full infrastructure testing
+6. Review the production plan artifact before merging
+
+### Continuous Deployment (CD)
+
+**Trigger**: Merges to `main` branch
+
+**What it does:**
+1. Automatically deploys changes to the **production environment**
+2. Runs `terragrunt stack generate`
+3. Initializes backend
+4. Applies all changes with `--non-interactive`
+
+**Important**: The CD pipeline automatically applies to production on merge. Always review the production plan from the CI pipeline before merging.
+
+### GitHub Secrets Required
+
+The bootstrap process automatically creates these secrets:
+- `PROJECT_ID`: Your GCP project ID
+- `WIF_PROVIDER`: Workload Identity Federation provider name
+- `WIF_SERVICE_ACCOUNT`: Service account email for GitHub Actions
+- `DEPLOY_KEY_TG_STACK`: SSH deploy key for catalog repository access
+- `DEPLOY_KEY_TG_LIVE`: SSH deploy key for live repository access
+
+## Testing
+
+### Infrastructure Testing with Terratest
+
+This repository includes automated infrastructure tests using Terratest (Go testing framework).
+
+**Test location**: `tests/staging_stack_test.go`
+
+**What it tests:**
+- Deploys the staging environment stack
+- Validates infrastructure is created successfully
+- Automatically cleans up resources after testing
+
+### Running Tests Locally
+
+```bash
+go test -v ./tests/... -timeout 30m
+```
+
+### Running Tests in CI
+
+Add the `run-terratest` label to your pull request. The CI will:
+1. Deploy infrastructure to staging
+2. Run validation tests
+3. Destroy all resources
+4. Report results in the PR
+
+**Note**: Tests deploy real GCP resources and may incur costs. They clean up automatically, but monitor your GCP projects to ensure proper cleanup.
+
+### Writing Custom Tests
+
+See the example in `tests/staging_stack_test.go`. Key patterns:
+- Use `t.Cleanup()` to ensure resources are destroyed
+- Test against non-production environments
+- Set appropriate timeouts for long-running operations
+
+## Development Workflow
+
+Follow this workflow when making infrastructure changes:
+
+### 1. Create a Feature Branch
+```bash
+git checkout -b feature/add-cloud-sql
+```
+
+### 2. Make Changes
+
+Update stack configurations or add new stacks:
 
 ```hcl
-inputs = merge(
-  local.account_vars.locals,
-  local.region_vars.locals,
-)
-```
-
-Avoid overloading this file with too much configuration, as it might not be the right level of abstraction for the configuration you need. Instead, prefer to use `terragrunt.stack.hcl` files to define configurations in `values` attributes, and pass down the values to the stacks and units that need them.
-
-### `terragrunt.stack.hcl`
-
-The `terragrunt.stack.hcl` file is used to define configurations for a stack of Terragrunt units. Any time you have multiple `terragrunt.hcl` files that need to be run together as part of your infrastructure deployment, you can define a `terragrunt.stack.hcl` file instead to encapsulate those configurations as a single entity that can be reliably reproduced across accounts, regions, environments, etc.
-
-Using the `values` attribute of [stack](https://terragrunt.gruntwork.io/docs/reference/config-blocks-and-attributes/#stack) and [unit](https://terragrunt.gruntwork.io/docs/reference/config-blocks-and-attributes/#unit) configuration blocks allows you to pass down configuration to units with granular control.
-
-For example, take this portion of [prod/us-east-1/stateful-ec2-asg-service/terragrunt.stack.hcl](prod/us-east-1/stateful-ec2-asg-service/terragrunt.stack.hcl) file:
-
-```hcl
-unit "service" {
-  // You'll typically want to pin this to a particular version of your catalog repository.
-  // e.g.
-  // source = "git::git@github.com:gruntwork-io/terragrunt-infrastructure-catalog-example.git//units/ec2-asg-stateful-service?ref=v0.1.0"
-  source = "git::git@github.com:gruntwork-io/terragrunt-infrastructure-catalog-example.git//units/ec2-asg-stateful-service"
-
-  path = "service"
+# live/dev/vpc_gce/terragrunt.stack.hcl
+stack "vpc_gce" {
+  source = "github.com/ConsciousML/terragrunt-template-catalog-gcp//stacks/vpc_gce?ref=v0.0.2"
+  path   = "infrastructure"
 
   values = {
-    // This version here is used as the version passed down to the unit
-    // to use when fetching the OpenTofu/Terraform module.
-    version = "main"
-
-    name          = local.name
-    instance_type = "t4g.micro"
-    min_size      = 2
-    max_size      = 4
-    server_port   = 3000
-    alb_port      = 80
-
-    db_path     = "../db"
-    asg_sg_path = "../sgs/asg"
-
-    // This is used for the userdata script that
-    // bootstraps the EC2 instances.
-    db_username = local.db_username
-    db_password = local.db_password
+    # Update values as needed
+    machine_type = "e2-small"  # Changed from e2-micro
   }
 }
 ```
 
-Here, you can see that the `values` attribute is setting exactly the values that are unique to the `service` unit in the context of the `stateful-ec2-asg-service` stack, including the `version` of the OpenTofu module it uses, and the relative paths to the dependencies it relies on (e.g. the `db` and `asg_sg` units).
+### 3. Test Locally (Dev Environment)
 
-## What to do with `.terraform.lock.hcl` files
+```bash
+cd live/dev
+terragrunt stack generate
+terragrunt run --all plan
+# Review the plan
+terragrunt run --all apply --non-interactive
+```
 
-When you run `terragrunt` commands you may find that `.terraform.lock.hcl` files are created in your working directories.
+### 4. Promote to Staging
 
-These files are intentionally not committed to this example repository, but you definitely should in your own repositories!
+Once dev testing is successful, update staging:
+```bash
+cd live/staging
+terragrunt stack generate
+terragrunt run --all plan
+terragrunt run --all apply --non-interactive
+```
 
-They help make sure that your IaC results in reproducible infrastructure. For more on this, read [Lock File Handling docs](https://terragrunt.gruntwork.io/docs/features/lock-file-handling/).
+### 5. Create Pull Request
 
-## How to get help
+```bash
+git add .
+git commit -m "feat: upgrade compute instance size"
+git push origin feature/add-cloud-sql
+# Open PR on GitHub
+```
 
-If you need help troubleshooting usage of this repository, or Terragrunt in general, check out the [Support docs](https://terragrunt.gruntwork.io/docs/community/support/).
+### 6. CI Validation
+
+The CI pipeline will:
+- Validate HCL formatting
+- Plan changes for all environments
+- Show production plan as downloadable artifact
+
+Add the `run-terratest` label to run full infrastructure tests.
+
+### 7. Review Production Plan
+
+Before merging, download and review the production plan artifact from the CI pipeline. This shows exactly what will be applied to production.
+
+### 8. Merge and Deploy
+
+Once approved and CI passes:
+- Merge the PR
+- CD pipeline automatically deploys to production
+- Monitor the deployment in GitHub Actions
+
+### 9. Verify Production
+
+After deployment, verify resources in GCP console:
+```bash
+gcloud compute instances list --project=your-prod-project-id
+```
+
+## Best Practices
+
+### Version Management
+- Pin catalog versions in stack configurations
+- Test new versions in dev/staging before production
+- Document version changes in commit messages
+
+### Environment Isolation
+- Use separate GCP projects for each environment (recommended)
+- Or use the same project with different resource naming
+- Keep state buckets separate per environment
+
+### State Management
+- State is stored in GCS buckets: `{project-id}-tofu-state-{environment}`
+- Buckets are created automatically with `--backend-bootstrap`
+- Never commit state files to git
+
+### Security
+- Workload Identity Federation eliminates long-lived credentials
+- Service account has minimal required permissions
+- Review IAM roles in bootstrap configuration
+
+### Change Management
+- Always plan before apply
+- Review production plans before merging
+- Use `run-terratest` label for critical changes
+- Keep production deployments small and incremental
+
+## Troubleshooting
+
+### Backend Initialization Fails
+```bash
+# Bootstrap the backend bucket
+cd live/dev
+terragrunt run --all init --backend-bootstrap --non-interactive
+```
+
+### Authentication Errors in CI
+Verify GitHub secrets are set:
+- `PROJECT_ID`
+- `WIF_PROVIDER`
+- `WIF_SERVICE_ACCOUNT`
+
+Re-run the bootstrap process if secrets are missing.
+
+### Plan Shows Unexpected Changes
+```bash
+# Regenerate stack to ensure latest configuration
+cd live/dev
+terragrunt stack generate
+terragrunt run --all plan
+```
+
+### Deploy Key Permission Errors
+Ensure deploy keys were created during bootstrap and added to both repositories (catalog and live).
+
+## Repository Structure Reference
+
+```
+live/
+   bootstrap/                              # One-time setup for GitHub Actions + GCP authentication
+      enable_tg_github_actions/          # Workload Identity Federation (WIF) configuration
+   dev/                                    # Development environment
+      project.hcl                         # GCP project ID for dev
+      region.hcl                          # GCP region for dev
+      environment.hcl                     # Environment identifier
+      vpc_gce/                            # Stack: VPC + Compute Engine
+          terragrunt.stack.hcl            # Stack configuration referencing catalog
+   staging/                                # Staging environment (mirrors dev structure)
+      vpc_gce/
+   prod/                                   # Production environment (mirrors dev structure)
+       vpc_gce/
+```
+
+## Related Documentation
+
+- [Catalog Repository](https://github.com/ConsciousML/terragrunt-template-catalog-gcp): Reusable IaC components
+- [Bootstrap Setup](https://github.com/ConsciousML/terragrunt-template-catalog-gcp/tree/main/bootstrap/enable_tg_github_actions): Detailed GitHub Actions setup
+- [Terragrunt Documentation](https://terragrunt.gruntwork.io/docs/): Official Terragrunt docs
+- [Gruntwork Infrastructure Patterns](https://github.com/gruntwork-io/terragrunt-infrastructure-live-example): Reference architecture
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
