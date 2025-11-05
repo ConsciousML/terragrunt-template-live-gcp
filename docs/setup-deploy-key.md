@@ -1,10 +1,6 @@
-Absolutely! Here’s a **minimal, step-by-step markdown doc** to help you remember how to set up and use a GitHub Deploy Key for Terragrunt private module access between two repos:
+# Deprecated 
 
----
-
-# Setting Up a GitHub Deploy Key for Terragrunt Module Access
-
-This guide walks you through giving a “live” repo CI/CD access to private modules stored in a “stack” repo using a deploy key.
+A deprecated documentation describing the manual steps to run the bootstrap pipeline manually.
 
 ---
 

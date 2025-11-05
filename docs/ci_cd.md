@@ -63,36 +63,46 @@ Follow the [bootstrap guide](https://github.com/ConsciousML/terragrunt-template-
 
 ### Standard Pull Request Workflow
 
-1. **Create a branch** with your infrastructure changes:
+1. Create a branch with your infrastructure changes:
    ```bash
    git checkout -b feature/update-instance-size
    ```
 
-2. **Make your changes** to stack configurations in `live/dev/`, `live/staging/`, or `live/prod/`
+2. Make changes into the Terraform code, units, and stacks in the catalog repository by following its [development workflow](https://github.com/ConsciousML/terragrunt-template-catalog-gcp/blob/main/docs/development.md).
 
-3. **Push to GitHub**:
-   ```bash
-   git add .
-   git commit -m "feat: increase compute instance size"
-   git push origin feature/update-instance-size
-   ```
+3. Next, update a stack configuration or add a new stack. For example:
+```hcl
+# live/dev/vpc_gce/terragrunt.stack.hcl
+locals {
+  version = "v0.0.3" # Change version, make sure to release on the catalog before
+}
 
-4. **Open a pull request** - The CI pipeline runs automatically:
-   - HCL format check validates formatting
-   - Validate & Plan runs on all three environments
-   - Production plan artifact is generated
+stack "vpc_gce" {
+  source = "github.com/ConsciousML/terragrunt-template-catalog-gcp//stacks/vpc_gce?ref=${local.version}"
+  path   = "infrastructure"
 
-5. **Review the CI results**:
+  values = {
+    machine_type = "e2-small"  # Changed from e2-micro
+    # all other parameters ...
+  }
+}
+```
+
+3. Push your code.
+
+4. Open a pull request. The CI pipeline runs automatically:
+
+5. Review the CI results:
    - Check that all validation passes
    - Download and review the **production plan artifact** (linked in PR comment)
    - The plan shows exactly what will be created, modified, or destroyed
 
-6. **(Optional) Add `run-terratest` label** for critical changes:
+6. Add `run-terratest` label:
    - Tests deploy real infrastructure to staging
    - Validates functionality end-to-end
    - Automatically cleans up resources
    - Use this before merging significant changes
 
-7. **Review and merge** once CI passes and production plan looks correct
+7. Review and merge.
 
-8. **CD automatically deploys to production** after merge completes
+8. CD automatically deploys to production after merge completes
