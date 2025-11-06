@@ -145,7 +145,7 @@ Follow the [Using the CI/CD section](docs/ci_cd.md#using-the-cicd) to deploy you
 - Validates HCL formatting
 - Runs `terragrunt plan` on dev, staging, and prod in parallel
 - Generates production plan artifact for review
-- Runs infrastructure tests when `run-terratest` label is added
+- Runs infrastructure tests
 - Upload prod plan output and comments on PR
 
 ### CD (Merge to main)

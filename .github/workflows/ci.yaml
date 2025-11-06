@@ -215,3 +215,5 @@ jobs:
 
             Please review the plan carefully.  
             :exclamation: **Upon merging this PR, the plan will be applied to production!**
+
+            Add the `skip-cd` label to prevent the automatic deployment.

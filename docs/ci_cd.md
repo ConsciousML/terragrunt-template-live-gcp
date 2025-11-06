@@ -29,10 +29,12 @@ Runs in parallel across **dev**, **staging**, and **prod** environments:
 For the **production environment**, the plan output is converted to HTML and uploaded as a downloadable artifact for review.
 
 #### 3. Terratest
-Runs infrastructure tests **only when the `run-terratest` label is added** to the PR:
+Runs infrastructure tests when the `run-terratest` label is added to the PR:
 - Deploys actual infrastructure to the staging environment
 - Runs Go-based validation tests
 - Automatically destroys all test resources
+
+If you want to skip the testing phase, add the `skip-terratest` label to the PR.
 
 #### 4. Comment on PR
 Posts a comment with:
@@ -48,7 +50,7 @@ Runs automatically when a PR is **merged to `main`**:
 - Initializes backend
 - Applies all changes with `--non-interactive`
 
-**Important**: CD automatically applies to production. Always review the production plan from CI before merging.
+**Important**: CD automatically applies to production. Always review the production plan from CI before merging. If you want to skip the deployment, add the `skip-cd` before merging the PR.
 
 ## Setup
 
