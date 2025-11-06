@@ -7,7 +7,10 @@ stack "vpc_gce" {
   path   = "infrastructure"
 
   values = {
-    version                = local.version
+    version = local.version
+    apis = [
+      "compute.googleapis.com"
+    ]
     network_name           = "vpc"
     subnet_name            = "subnet"
     subnet_cidr            = "10.0.0.0/24"
